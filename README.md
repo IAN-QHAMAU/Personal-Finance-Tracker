@@ -36,6 +36,8 @@ Unlike fixed-limit budget apps, this system uses percentage-based budgeting and 
 
 ```text
 smart-finance-dashboard/
+├── data/
+│   └── sample_transactions.csv
 ├── frontend/
 │   ├── public/
 │   │   └── sample_transactions.csv
@@ -46,10 +48,8 @@ smart-finance-dashboard/
 │   ├── index.html
 │   ├── package.json
 │   └── vite.config.js
-├── data/
-│   └── sample_transactions.csv
-├── README.md
 └── .gitignore
+├── README.md
 ```
 
 ## Data
