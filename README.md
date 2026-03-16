@@ -2,6 +2,10 @@
 
 An intelligent personal finance management system that helps users monitor, analyze, and optimize spending habits with adaptive budgeting and data-driven insights.
 
+## Live Demo
+
+- https://ian-qhamau.github.io/Personal-Finance-Tracker/
+
 ## Overview
 
 This platform transforms raw transactions into:
@@ -36,8 +40,6 @@ Unlike fixed-limit budget apps, this system uses percentage-based budgeting and 
 
 ```text
 smart-finance-dashboard/
-├── data/
-│   └── sample_transactions.csv
 ├── frontend/
 │   ├── public/
 │   │   └── sample_transactions.csv
@@ -54,7 +56,7 @@ smart-finance-dashboard/
 
 ## Data
 
-The app loads `sample_transactions.csv` from the `public/` folder at runtime **only when there is no saved local data**. All processing runs in the browser — no backend required.
+The app loads `sample_transactions.csv` from `frontend/public/` at runtime **only when there is no saved local data**. All processing runs in the browser — no backend required.
 
 The dashboard also supports CSV upload from the UI. Uploaded records replace the current transaction set and are persisted in browser `localStorage`.
 
