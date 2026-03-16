@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const DEFAULT_INCOME = 3000;
+const TRANSACTIONS_STORAGE_KEY = "sfd_transactions";
 const BUDGET_BUCKETS = {
   needs: 0.5,
   wants: 0.3,
@@ -61,6 +62,20 @@ function parseCsv(content) {
       description: row.description || "",
     };
   });
+}
+
+function normalizeTransactions(rows) {
+  return rows
+    .filter((row) => row && row.date && row.category && toAmount(row.amount) > 0)
+    .map((row, index) => ({
+      id: row.id || `${row.date}-${row.category}-${index}`,
+      date: row.date,
+      category: row.category,
+      amount: toAmount(row.amount),
+      type: String(row.type || "expense").toLowerCase(),
+      description: row.description || "",
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
 
 function classifyBucket(category) {
@@ -208,12 +223,24 @@ export default function App() {
 
     async function loadSeedData() {
       try {
+        const saved = window.localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
+        if (saved) {
+          const parsedSaved = JSON.parse(saved);
+          if (Array.isArray(parsedSaved)) {
+            const normalizedSaved = normalizeTransactions(parsedSaved);
+            if (normalizedSaved.length && active) {
+              setTransactions(normalizedSaved);
+              return;
+            }
+          }
+        }
+
         const response = await fetch("/sample_transactions.csv");
         if (!response.ok) {
           throw new Error("Unable to fetch seed transactions");
         }
         const csv = await response.text();
-        const parsed = parseCsv(csv);
+        const parsed = normalizeTransactions(parseCsv(csv));
         if (active) {
           setTransactions(parsed);
         }
@@ -231,6 +258,10 @@ export default function App() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(transactions));
+  }, [transactions]);
 
   const totals = useMemo(() => {
     const income = transactions
@@ -352,7 +383,7 @@ export default function App() {
       description: form.description,
     };
 
-    setTransactions((prev) => [payload, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
+    setTransactions((prev) => normalizeTransactions([payload, ...prev]));
     setForm({
       date: "",
       amount: "",
@@ -375,16 +406,24 @@ export default function App() {
 
     function handleCsvUpload(event) {
       const file = event.target.files[0];
-      if (!file) return;
+      if (!file) {
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
-        const parsed = parseCsv(e.target.result);
-        if (!parsed.length) {
-          showToast("No valid rows found in CSV");
-          return;
+        try {
+          const csvText = String(e.target?.result || "");
+          const parsed = normalizeTransactions(parseCsv(csvText));
+          if (!parsed.length) {
+            showToast("No valid rows found in CSV");
+            return;
+          }
+          setTransactions(parsed);
+          showToast(`Loaded ${parsed.length} transactions`);
+        } catch (error) {
+          showToast("Could not parse CSV file");
         }
-        setTransactions(parsed);
-        showToast(`Loaded ${parsed.length} transactions`);
       };
       reader.readAsText(file);
       event.target.value = "";
